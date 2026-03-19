@@ -3,6 +3,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import numpy as np
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 
 
 def preprocessing(red_file, white_file, output_file=None, test_size = 0.2, rd_state=42):
@@ -137,6 +138,15 @@ def hp_search_grid(alg_type, y_train):
         print("you might key in the wrong alg name")
         raise KeyError
 
+def calculate_metrics(y_true, y_pred):
+    mse = mean_squared_error(y_true, y_pred)
+    rmse = np.sqrt(mse)
+    mae = mean_absolute_error(y_true, y_pred)
+    r2 = r2_score(y_true, y_pred)
+    hits = np.sum(np.abs(np.round(y_pred) - y_true) <= 1)
+    acc_plus_minus_1 = hits / len(y_true)
+
+    return mse, rmse, mae, r2, acc_plus_minus_1
 
 
 
