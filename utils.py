@@ -129,8 +129,8 @@ def hp_search_grid(alg_type, y_train):
         k_values = np.unique(k_values)
         return {'k': k_values, 
                 'weights': ['uniform', 'distance'],
-                'alpha_1': [1e-6, 1e-4, 1e-2], # regularization for bias, assuming bias follows some informative prior
-                'lambda_1': [1e-6, 1e-4, 1e-2]} # regularization for weights, assuming Gaussian prior
+                'alpha_1': np.logspace(-6, 0, 4), # regularization for bias
+                'lambda_1': np.logspace(-6, 0, 4)} # regularization for weights, assuming Gaussian prior
     else:
         print("you might key in the wrong alg name")
         raise KeyError
