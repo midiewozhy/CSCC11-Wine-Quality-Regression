@@ -10,23 +10,23 @@ import numpy as np
 
 def local_prediction(i, inx_i, dist_i, normed_X_train, y_train, normed_X_test_i, weight, reg):
     """
-    针对第 i 个测试点进行局部回归预测
+    
     """
-    # 提取局部数据 (确保从训练集取！)
+    # extract local data point
     X_local = normed_X_train[inx_i]
     y_local = y_train[inx_i]
     
-    # 计算权重
+    # calculate distance based average
     sw = 1 / (dist_i + 1e-6) if weight == 'distance' else None
     
-    # 拟合局部模型
+    # fit the model and predict
     lbr = BayesianRidge(alpha_1=reg[0], lambda_1=reg[1])
     lbr.fit(X_local, y_local, sample_weight=sw)
     pred = lbr.predict(normed_X_test_i.reshape(1, -1))[0]
     final_lambda = lbr.lambda_
     final_alpha = lbr.alpha_
     
-    # 预测并返回标量
+    # return
     return {
             "pred": pred,
             "lambda": final_lambda,
@@ -92,7 +92,6 @@ for k in near_neigh:
                         "lambda": np.mean(lambdas),
                         "alpha": np.mean(alphas)
                     },
-                    # 如果内存允许，可以存下这份预测用于后续残差分析
                     "y_pred": test_prediction
                 }
 
