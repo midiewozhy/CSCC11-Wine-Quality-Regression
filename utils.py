@@ -157,27 +157,32 @@ def calculate_metrics(y_true, y_pred):
     return mse, rmse, mae, r2, acc_plus_minus_1
 
 
-def plot_k_metrics(test_predictions):
+def plot_k_metrics(test_predictions, metrics_type = 'mse'):
     """
-    Plot mse, red_mse, white_mse vs. k
+    Plot metrics vs. k
     """
     ks = list(test_predictions.keys())
-    total_mse = [test_predictions[k]['metrics']['mse'] for k in ks]
-    red_mse = [test_predictions[k]['red_metrics']['mse'] for k in ks]
-    white_mse = [test_predictions[k]['white_metrics']['mse'] for k in ks]
+    total_metrics = [test_predictions[k]['metrics'][metrics_type] for k in ks]
+    red_metrics = [test_predictions[k]['red_metrics'][metrics_type] for k in ks]
+    white_metrics = [test_predictions[k]['white_metrics'][metrics_type] for k in ks]
 
     plt.figure(figsize=(10, 6))
-    plt.plot(ks, total_mse, 'k-o', label='Total MSE', linewidth=2)
-    plt.plot(ks, red_mse, 'r--', label='Red Wine MSE')
-    plt.plot(ks, white_mse, 'b--', label='White Wine MSE')
+    plt.plot(ks, total_metrics, 'k-o', label=f'Total {metrics_type.upper()}', linewidth=2)
+    plt.plot(ks, red_metrics, 'r--', label=f'Red Wine {metrics_type.upper()}')
+    plt.plot(ks, white_metrics, 'b--', label=f'White Wine {metrics_type.upper()}')
     
-    # notate the smallest mse
-    plt.axvline(x=ks[np.argmin(total_mse)], color='g', alpha=0.8, linestyle=':')
-    plt.axvline(x=ks[np.argmin(red_mse)], color='r', alpha=0.8, linestyle=':')
-    plt.axvline(x=ks[np.argmin(white_mse)], color='b', alpha=0.8, linestyle=':')
+    # notate the smallest/largest
+    if metrics_type in ('mse','rmse','mae'):
+        plt.axvline(x=ks[np.argmin(total_metrics)], color='black', alpha=0.8, linestyle=':')
+        plt.axvline(x=ks[np.argmin(red_metrics)], color='r', alpha=0.8, linestyle=':')
+        plt.axvline(x=ks[np.argmin(white_metrics)], color='b', alpha=0.8, linestyle=':')
+    else:
+        plt.axvline(x=ks[np.argmax(total_metrics)], color='black', alpha=0.8, linestyle=':')
+        plt.axvline(x=ks[np.argmax(red_metrics)], color='r', alpha=0.8, linestyle=':')
+        plt.axvline(x=ks[np.argmax(white_metrics)], color='b', alpha=0.8, linestyle=':')
     
     plt.xlabel('K (Number of Neighbors)')
-    plt.ylabel('MSE')
+    plt.ylabel(f'{metrics_type.upper()}')
     plt.title('Heterogeneity between Red and White Wine')
     plt.legend()
     plt.grid(True, alpha=0.3)
