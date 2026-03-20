@@ -69,8 +69,12 @@ def preprocessing(red_file, white_file, output_file=None, test_size = 0.2, rd_st
     y = data_shuffled['quality']
 
     # Train test split
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=rd_state)
-
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y,
+        test_size=test_size,
+        random_state=rd_state,
+        stratify=X['red'],       # 0=white, 1=red
+    )
     return X_train, y_train, X_test, y_test
 
 
@@ -121,8 +125,19 @@ def hp_search_grid(alg_type, y_train):
         return {'k': k_values}
     
     elif alg_type == 'ann':
-        return {'num_layers':[1,2,3], 
-                'num_units':[32,64,128]}
+        return {
+            'hidden_widths': [8, 16, 32, 64],
+            'architectures': [
+                                [8],
+                                [16],
+                                [32],
+                                [64],
+                                [16, 8],
+                                [32, 16],
+                                [64, 16],
+                                [64, 32],
+                            ],
+        }
     
     elif alg_type == 'bfr':
         return {'width':[], 
