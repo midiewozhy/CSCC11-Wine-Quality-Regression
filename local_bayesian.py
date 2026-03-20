@@ -2,6 +2,8 @@ from utils import preprocessing as pp
 from utils import normalization as nz
 from utils import hp_search_grid as hp
 from utils import calculate_metrics as cm
+from utils import plot_k_metrics as pk
+from utils import plot_residuals as pr
 from sklearn.neighbors import NearestNeighbors
 from sklearn.linear_model import BayesianRidge
 from joblib import Parallel, delayed
@@ -129,8 +131,11 @@ for k in near_neigh:
             test_predictions[k] = best_record_for_k
 
 
-# Find the best K, and other necessary params
+# Plot results
 result_df = pd.Dataframe(test_predictions)
+result_df.to_csv('local_bayesian.csv', index=False, encoding='utf-8-sig')
+
+
 
 
 
