@@ -4,7 +4,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler, StandardScaler
 import numpy as np
 from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, accuracy_score
-
+import matplotlib.pyplot as plt
+import seaborn as sns
 
 def preprocessing(red_file, white_file, output_file=None, test_size = 0.2, rd_state=42):
     """
@@ -155,3 +156,46 @@ def calculate_metrics(y_true, y_pred):
 
     return mse, rmse, mae, r2, acc_plus_minus_1
 
+
+def plot_k_metrics(test_predictions):
+    """
+    Plot mse, red_mse, white_mse vs. k
+    """
+    ks = list(test_predictions.keys())
+    total_mse = [test_predictions[k]['metrics']['mse'] for k in ks]
+    red_mse = [test_predictions[k]['red_metrics']['mse'] for k in ks]
+    white_mse = [test_predictions[k]['white_metrics']['mse'] for k in ks]
+
+    plt.figure(figsize=(10, 6))
+    plt.plot(ks, total_mse, 'k-o', label='Total MSE', linewidth=2)
+    plt.plot(ks, red_mse, 'r--', label='Red Wine MSE')
+    plt.plot(ks, white_mse, 'b--', label='White Wine MSE')
+    
+    # notate the smallest mse
+    plt.axvline(x=ks[np.argmin(total_mse)], color='g', alpha=0.8, linestyle=':')
+    plt.axvline(x=ks[np.argmin(red_mse)], color='r', alpha=0.8, linestyle=':')
+    plt.axvline(x=ks[np.argmin(white_mse)], color='b', alpha=0.8, linestyle=':')
+    
+    plt.xlabel('K (Number of Neighbors)')
+    plt.ylabel('MSE')
+    plt.title('Heterogeneity between Red and White Wine')
+    plt.legend()
+    plt.grid(True, alpha=0.3)
+    plt.show()
+
+def plot_residuals(y_true, y_pred, is_red):
+    """
+    Residual plot
+    """
+    residuals = y_true - y_pred
+    df = pd.DataFrame({
+        'Predicted': y_pred,
+        'Residuals': residuals,
+        'Type': ['Red' if r else 'White' for r in is_red]
+    })
+    
+    g = sns.JointGrid(data=df, x="Predicted", y="Residuals", hue="Type")
+    g.plot_joint(sns.scatterplot, alpha=0.5)
+    g.plot_marginals(sns.kdeplot, fill=True)
+    plt.axhline(y=0, color='black', linestyle='--')
+    plt.show()
