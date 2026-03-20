@@ -4,9 +4,9 @@ from utils import hp_search_grid as hp
 from utils import calculate_metrics as cm
 from sklearn.neighbors import NearestNeighbors
 from sklearn.linear_model import BayesianRidge
-from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 from joblib import Parallel, delayed
 import numpy as np
+import pandas as pd
 
 def local_prediction(i, inx_i, dist_i, normed_X_train, y_train, normed_X_test_i, weight, reg):
     """
@@ -42,7 +42,7 @@ output_file = 'winequality-modified.csv'
 X_train, y_train, X_test, y_test = pp(red_file, white_file)
 normed_X_train, normed_X_test, _ = nz(X_train, X_test)
 y_train_np = y_train.values
-X_train_np = normed_X_train if isinstance(normed_X_train, np.ndarray) else normed_X_train.values
+#X_train_np = normed_X_train if isinstance(normed_X_train, np.ndarray) else normed_X_train.values
 
 # initialize hyperparam search grid
 hps = hp('lb', y_train)
@@ -70,7 +70,7 @@ for k in near_neigh:
             print(f"Running: k={k}, weight={weight}, reg={reg}")
             results = Parallel(n_jobs=-1)(
                 delayed(local_prediction)(
-                    i, inx[i], dist[i], X_train_np, y_train_np, normed_X_test[i], weight, reg
+                    i, inx[i], dist[i], normed_X_train, y_train_np, normed_X_test[i], weight, reg
                 ) 
                 for i in range(len(y_test))
             )
@@ -97,6 +97,9 @@ for k in near_neigh:
 
             test_predictions[k] = best_record_for_k
 
-            
+
+# Find the best K, and other necessary params
+result_df = pd.Dataframe(test_predictions)
+
 
 
