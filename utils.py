@@ -140,9 +140,10 @@ def hp_search_grid(alg_type, y_train):
         }
     
     elif alg_type == 'bfr':
-        return {'width':[], 
-                'center':[], 
-                'regularization':[]}
+        return {'width':[0.001, 0.01, 0.1, 1, 10], 
+                'center':[5, 10, 25, 50, 100], 
+                'degree': [1,2,3,4],
+                'regularization':[0.001, 0.01, 0.1, 1, 10]}
     
     elif alg_type == 'lb':
         min_k = 25 
