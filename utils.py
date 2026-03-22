@@ -77,7 +77,6 @@ def preprocessing(red_file, white_file, output_file=None, test_size = 0.2, rd_st
     )
     return X_train, y_train, X_test, y_test
 
-
 def normalization(X_train, X_test, is_minmax=False):
     """
     Args: 
@@ -108,6 +107,34 @@ def normalization(X_train, X_test, is_minmax=False):
 
     return X_train_normalized, X_test_normalized, scaler
 
+def soft_label(y_true, sigma=0.5, min_score=3, max_score=9):
+    y_true = float(y_true)
+
+    if sigma <= 0:
+        return y_true
+
+    scores = np.arange(min_score, max_score + 1, dtype=np.float64)
+    weights = np.exp(-0.5 * ((scores - y_true) / sigma) ** 2)
+    weights /= weights.sum()
+    return float(np.dot(weights, scores))
+
+def smooth_labels(y, sigma=0.5, min_score=3, max_score=9):
+    if hasattr(y, "to_numpy"):
+        y = y.to_numpy(dtype=np.float64)
+    else:
+        y = np.asarray(y, dtype=np.float64)
+
+    y = y.reshape(-1)
+
+    if sigma <= 0:
+        return y.reshape(-1, 1)
+
+    y_smooth = np.array(
+        [soft_label(label, sigma=sigma, min_score=min_score, max_score=max_score) for label in y],
+        dtype=np.float64,
+    )
+    return y_smooth.reshape(-1, 1)
+
 def hp_search_grid(alg_type, y_train):
     """
     Args:
@@ -125,7 +152,7 @@ def hp_search_grid(alg_type, y_train):
         return {'k': k_values}
     
     elif alg_type == 'ann':
-        return {
+        """
             'hidden_widths': [8, 16, 32, 64],
             'architectures': [
                                 [8],
@@ -136,6 +163,24 @@ def hp_search_grid(alg_type, y_train):
                                 [32, 16],
                                 [64, 16],
                                 [64, 32],
+                            ],
+        """
+        return {
+            'hidden_widths': [16, 32, 64, 128],
+            'architectures': [
+                                [32],
+                                [64],
+                                [128],
+
+                                [32, 16],
+                                [64, 32],
+                                [128, 64],
+                                [128, 32], 
+                                [64, 16],
+                                [128, 16],
+
+                                [128, 64, 32],
+                                [64, 32, 16],  
                             ],
         }
     
