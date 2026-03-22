@@ -16,6 +16,8 @@ from sklearn.linear_model import Ridge
 from sklearn.pipeline import Pipeline
 from itertools import product
 
+import pprint
+
 # configs
 
 red_file = 'winequality-red.csv'
@@ -39,8 +41,10 @@ def getdata():
     # red wine
     redwines = X_train['red'].values == 1
     X_train_redwine = X_train[redwines]
-    X_test_redwine = X_test[redwines]
     y_train_redwine = y_train[redwines]
+
+    redwines = X_test['red'].values == 1
+    X_test_redwine = X_test[redwines]
     y_test_redwine = y_test[redwines]
 
     X_train_redwine_norm, X_test_redwine_norm, scaler = u.normalization(X_train_redwine, X_test_redwine)
@@ -53,10 +57,13 @@ def getdata():
     }
 
     # white wine
+
     whitewines = X_train['red'].values == 0
     X_train_whitewine = X_train[whitewines]
-    X_test_whitewine = X_test[whitewines]
     y_train_whitewine = y_train[whitewines]
+
+    whitewines = X_test['red'].values == 0
+    X_test_whitewine = X_test[whitewines]
     y_test_whitewine = y_test[whitewines]
 
     X_train_whitewine_norm, X_test_whitewine_norm, scaler = u.normalization(X_train_whitewine, X_test_whitewine)
@@ -82,7 +89,7 @@ def trainpoly(data, hp):
         "acc_plus_minus_1": [],
     }
 
-    for d, r in product(hp["degrees"], hp["regularization"]):
+    for d, r in product(hp["degree"], hp["regularization"]):
         polymodel = Pipeline([
             ('poly', PolynomialFeatures(degree=d)),
             ('ridge', Ridge(alpha=r))
@@ -117,7 +124,7 @@ def trainrbf(data, hp):
         "acc_plus_minus_1": [],
     }
 
-    for w, c, r in product(hp["widths"], hp["centers"], hp["regularization"]):
+    for w, c, r in product(hp["width"], hp["center"], hp["regularization"]):
         rbfmodel = Pipeline([
             ('nystrom', Nystroem(kernel='rbf', gamma=w, n_components=c, random_state=42)),  
             ('ridge', Ridge(alpha=r))
@@ -227,12 +234,15 @@ def getredandwhitewineresult():
 
 
 
-"""
+
 
 if __name__ == "__main__":
+    results = getredandwhitewineresult()
+
+    pprint.pprint(results)
 
 
-"""
+
     
 
 
