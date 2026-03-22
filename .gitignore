@@ -1,7 +1,0 @@
-*.csv
-*.ipynb
-winequality.names
-.venv
-__pycache__
-gpush
-
