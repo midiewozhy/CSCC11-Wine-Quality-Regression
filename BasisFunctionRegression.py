@@ -28,13 +28,16 @@ def getdata():
     # raw data
     X_train, y_train, X_test, y_test = u.preprocessing(red_file, white_file)
 
+    redwines = X_test['red'].values == 1
+
     # general data
     X_train_norm, X_test_norm, scaler = u.normalization(X_train, X_test)
     general_data = {
         "X_train": X_train_norm, 
         "y_train": y_train, 
         "X_test": X_test_norm, 
-        "y_test": y_test
+        "y_test": y_test,
+        "test_is_red": redwines
     }
 
 
@@ -87,6 +90,7 @@ def trainpoly(data, hp):
         "mae": [],
         "r2": [],
         "acc_plus_minus_1": [],
+        "y_pred": []
     }
 
     for d, r in product(hp["degree"], hp["regularization"]):
@@ -109,6 +113,7 @@ def trainpoly(data, hp):
         polyresults["mae"].append(mae)
         polyresults["r2"].append(r2)
         polyresults["acc_plus_minus_1"].append(acc_plus_minus_1)
+        polyresults["y_pred"].append(y_pred)
 
     return polyresults
 
@@ -122,6 +127,7 @@ def trainrbf(data, hp):
         "mae": [],
         "r2": [],
         "acc_plus_minus_1": [],
+        "y_pred": []
     }
 
     for w, c, r in product(hp["width"], hp["center"], hp["regularization"]):
@@ -131,6 +137,7 @@ def trainrbf(data, hp):
         ])
         rbfmodel.fit(X_train, y_train)
         y_pred = rbfmodel.predict(X_test)
+
         mse, rmse, mae, r2, acc_plus_minus_1 = u.calculate_metrics(y_test, y_pred)
 
         rbfhp = {
@@ -145,6 +152,7 @@ def trainrbf(data, hp):
         rbfresults["mae"].append(mae)
         rbfresults["r2"].append(r2)
         rbfresults["acc_plus_minus_1"].append(acc_plus_minus_1)
+        rbfresults["y_pred"].append(y_pred)
 
     return rbfresults
 
@@ -160,6 +168,7 @@ def getoptimalpolyhp(polyresults):
         "mae": polyresults["mae"][idx],
         "r2": polyresults["r2"][idx],
         "acc_plus_minus_1": polyresults["acc_plus_minus_1"][idx],
+        "y_pred": polyresults["y_pred"][idx]
     }
 
     return results
@@ -177,6 +186,7 @@ def getoptimalrbfhp(rbfresults):
         "mae": rbfresults["mae"][idx],
         "r2": rbfresults["r2"][idx],
         "acc_plus_minus_1": rbfresults["acc_plus_minus_1"][idx],
+        "y_pred": rbfresults["y_pred"][idx]
     }
 
     return results
@@ -198,7 +208,12 @@ def getgeneralresult():
         "RBFRegression": bestrbfhp
     }
 
+    u.plot_residuals(general_data["y_test"], results["PolynomialRegression"]["y_pred"], general_data["test_is_red"])
+    u.plot_residuals(general_data["y_test"], results["RBFRegression"]["y_pred"], general_data["test_is_red"])
+
     return results
+
+    
 
 
 def getredandwhitewineresult():
@@ -229,17 +244,26 @@ def getredandwhitewineresult():
         
     }
 
+    
+
     return results
-
-
 
 
 
 
 if __name__ == "__main__":
     results = getredandwhitewineresult()
-
     pprint.pprint(results)
+
+    print("\n\n\n")
+
+    results = getgeneralresult()
+    pprint.pprint(results)
+
+
+    
+
+
 
 
 
