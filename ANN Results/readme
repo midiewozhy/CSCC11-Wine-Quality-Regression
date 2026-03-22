@@ -1,0 +1,86 @@
+All hyper parameters tested found in pipeline
+
+initial architecture tested (1):
+            'hidden_widths': [8, 16, 32, 64],
+            'architectures': [
+                                [8],
+                                [16],
+                                [32],
+                                [64],
+                                [16, 8],
+                                [32, 16],
+                                [64, 16],
+                                [64, 32],
+                            ],
+
+extended (2)
+
+            'hidden_widths': [16, 32, 64, 128],
+            'architectures': [
+                                [32],
+                                [64],
+                                [128],
+
+                                [32, 16],
+                                [64, 32],
+                                [128, 64],
+                                [128, 32], 
+                                [64, 16],
+                                [128, 16],
+
+                                [128, 64, 32],
+                                [64, 32, 16],  
+                            ],
+
+Interpretation of file names:
+
+(1)
+- initial: no sklearn used, nonoptimal
+- SGD: Sklearn implemented, SDG solver used and full patch training
+- ADAM 128 batch early/noearly stop: ADAM solver used, 128 batch, early vs no early stop
+- fixednormalization ADAM 128 batch: same as above w/ early batch, stopped normalization for red/white wine labels (1/0)
+- FN newdatasplit expanded hyper parameter: same as above but added Stratify
+- ADAM 64 batch: same as above but trained with 64 batch instead
+
+(2)
+- ADAM higherarchitecture 64/128 batch: Same as above but expanded and new architectures tested
+- softlabel: same as above but implemented soft labels
+- softlabel weighted MSE: same as above but used weighted MSE
+- featureengineering: removed soft labels and MSE. attempted feature engineering (in utils.py, changes removed)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
