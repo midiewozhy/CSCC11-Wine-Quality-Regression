@@ -9,3 +9,4 @@ __pycache__
 *.txt
 plot
 *.png
+local_bayes_cv.py
