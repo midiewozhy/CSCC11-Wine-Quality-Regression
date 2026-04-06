@@ -7,6 +7,8 @@ from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error, a
 import matplotlib.pyplot as plt
 import seaborn as sns
 
+#
+
 def preprocessing(red_file, white_file, output_file=None, test_size = 0.2, rd_state=42, stratify = True):
     """
     Args: 
@@ -135,7 +137,7 @@ def smooth_labels(y, sigma=0.5, min_score=3, max_score=9):
     )
     return y_smooth.reshape(-1, 1)
 
-def hp_search_grid(alg_type, y_train):
+def hp_search_grid(alg_type, y_train, X_train=None):
     """
     Args:
     alg_type: "knn", "lb"-local bayesian, "ann", "bfr"-basis function regression
@@ -185,11 +187,41 @@ def hp_search_grid(alg_type, y_train):
         }
     
     elif alg_type == 'bfr':
+        assert X_train is not None, "if alg_type == bfr then X_train must not be None"
+
+        n = y_train.shape[0]  # samples
+
+        # RBF widths , gamma = 1/2*width^2 
+        ridx = np.random.choice(a=n, size=500, replace=False)
+        sample = X_train[ridx]  # calculating pairwise distances for entire dataset may be too expensive
+        
+        dists = pairwise_distances(sample)
+        median_dist = np.median(dists[dists > 0])  # median heuristic, standard in kernel methods
+        gammas = np.logspace(
+            np.log10(1 / (2 * (median_dist * 2) ** 2)),   # wider than median
+            np.log10(1 / (2 * (median_dist * 0.1) ** 2)), # narrower than median
+            8
+        )
+
+        # number of centers 
+        centers = np.unique(np.logspace(
+            np.log10(int(np.sqrt(n))),
+            np.log10(n // 5),
+            7
+        ).astype(int))
+
+        # regularization coef
+        regularizations = np.logspace(-4, 2, 10)
+
+        # polynomial degrees
+        degrees = list(range(1, 7))
+
+
         return {
-        'width':[0.001, 0.01, 0.1, 1, 10],
-        'center':[5, 10, 25, 50, 100],
-        'degree': [1,2,3,4],
-        'regularization':[0.001, 0.01, 0.1, 1, 10]
+            'width': gammas,
+            'center': centers,
+            'regularization': regularizations,
+            'degree': degrees
         }
     
     elif alg_type == 'lb':
@@ -205,6 +237,39 @@ def hp_search_grid(alg_type, y_train):
                 'weights': ['uniform', 'distance'],
                 'alpha_1': np.logspace(-6, 0, 4), # regularization for bias
                 'lambda_1': np.logspace(-6, 0, 4)} # regularization for weights, assuming Gaussian prior
+
+    elif alg_type == 'sr':
+        n = y_train.shape[0] # samples
+        d = X_train.shape[1] # features
+
+        # niterations 
+        niterations = np.unique(np.linspace(20, min(200, n // 40), 2).astype(int))
+
+        # maxsize 
+        maxsize = np.arange(d, 4*d, d)
+
+        # population_size 
+        population_size = np.unique(np.linspace(20, min(100, 5 * d), 3).astype(int))
+
+        #binary operators
+        binary_operators = [                              
+            ["+", "-", "*", "/"]         
+        ]
+
+        #unary operators
+        unary_operators = [
+            None,                                
+            ["exp", "log", "sqrt"]          
+        ]
+
+        return {
+            'niterations': niterations,
+            'maxsize': maxsize,
+            'population_size': population_size,
+            'binary_operators': binary_operators,
+            'unary_operators': unary_operators
+        }
+
     else:
         print("you might key in the wrong alg name")
         raise KeyError
@@ -251,7 +316,8 @@ def plot_k_metrics(test_predictions, metrics_type = 'mse'):
     plt.grid(True, alpha=0.3)
     plt.show()
 
-def plot_residuals(y_true, y_pred, is_red):
+
+def plot_residuals(y_true, y_pred, is_red, title=None, outputfilename=None):
     """
     Residual plot
     """
@@ -266,4 +332,94 @@ def plot_residuals(y_true, y_pred, is_red):
     g.plot_joint(sns.scatterplot, alpha=0.5)
     g.plot_marginals(sns.kdeplot, fill=True)
     plt.axhline(y=0, color='black', linestyle='--')
-    plt.show()
+    if title != None:
+        plt.title(title)
+
+    if outputfilename == None:
+        plt.show()
+    else: 
+        plt.savefig(outputfilename, dpi=150, bbox_inches='tight')
+
+    plt.close()
+
+
+
+def kfoldtrain(X_train, y_train, model, varnames=None):
+    """
+    calculate mse of specified model using kfold algorithm
+    """
+    X_train = np.asarray(X_train)
+    y_train = np.asarray(y_train)
+
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    mses = []
+
+    for train_idx, val_idx in kf.split(X_train):
+        X_tr, X_val = X_train[train_idx], X_train[val_idx]
+        y_tr, y_val = y_train[train_idx], y_train[val_idx]
+        
+        if (varnames is None):
+            model.fit(X_tr, y_tr)
+        else:
+            model.fit(X_tr, y_tr, variable_names=varnames)
+    
+        pred = model.predict(X_val)
+        if not np.isfinite(pred).all(): # skip if infinite or nan values
+            continue
+
+        mse, _, _, _, _ = calculate_metrics(y_val, pred)
+        mses.append(mse)
+
+    if len(mses) == 0: # all infinite or nan values
+        return float('inf')
+
+    return np.mean(mses) 
+
+def save_predictions(y_true, y_pred, is_red, filename):
+    """
+    calculate predicted values to a csv file
+    """
+    df = pd.DataFrame({
+        'y_true': y_true,
+        'y_pred': y_pred,
+        'is_red': is_red
+    })
+    df.to_csv(filename, index=False)
+
+def extract_csv(filename):
+    """
+    get predicted values from a csv file
+    """
+    df = pd.read_csv(filename)
+
+    y_true = df['y_true'].values
+    y_pred = df['y_pred'].values
+    is_red = df['is_red'].values
+
+    general_data = {
+        "y_true": y_true,
+        "y_pred": y_pred,
+        "is_red": is_red
+    }
+
+
+    redwines = is_red == 1
+    whitewines = is_red == 0
+
+    y_true_red = y_true[redwines]
+    y_pred_red = y_pred[redwines]
+
+    redwine_data = {
+        "y_true": y_true_red,
+        "y_pred": y_pred_red
+    }
+
+    y_true_white = y_true[whitewines]
+    y_pred_white = y_pred[whitewines]
+
+    whitewine_data = {
+        "y_true": y_true_white,
+        "y_pred": y_pred_white
+    }
+
+    return general_data, redwine_data, whitewine_data
